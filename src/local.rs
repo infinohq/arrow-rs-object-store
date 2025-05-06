@@ -34,7 +34,6 @@ use url::Url;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{
-    maybe_spawn_blocking,
     path::{absolute_path_to_url, Path},
     util::InvalidGetRange,
     Attributes, GetOptions, GetResult, GetResultPayload, ListResult, MultipartUpload, ObjectMeta,
@@ -130,6 +129,16 @@ impl From<Error> for super::Error {
             },
         }
     }
+}
+
+/// Takes a function and executes it without any Tokio blocking thread.
+/// This is needed as Tokio encourages not to spawn blocking threads from async context.
+async fn maybe_spawn_blocking<F, T>(f: F) -> Result<T>
+where
+    F: FnOnce() -> Result<T> + Send + 'static,
+    T: Send + 'static,
+{
+    f()
 }
 
 /// Local filesystem storage providing an [`ObjectStore`] interface to files on
