@@ -56,6 +56,7 @@ use ring::digest;
 use ring::digest::Context;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tracing::warn;
 
 const VERSION_HEADER: &str = "x-amz-version-id";
 const SHA256_CHECKSUM: &str = "x-amz-checksum-sha256";
@@ -655,7 +656,11 @@ impl S3Client {
             .with_extensions(extensions)
             .idempotent(true)
             .send()
-            .await?
+            .await
+            .map_err(|err| {
+                warn!("Create multipart failed: {:?}", err);
+                Error::CreateMultipartResponseBody { source }
+            })
             .into_body()
             .bytes()
             .await
