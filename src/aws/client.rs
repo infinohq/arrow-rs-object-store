@@ -648,6 +648,7 @@ impl S3Client {
                 }
             }
         }
+        warn!("Creating multipart request");
         let response = request
             .query(&[("uploads", "")])
             .with_encryption_headers()
