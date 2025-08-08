@@ -55,7 +55,9 @@ use quick_xml::events::{self as xml_events};
 use ring::digest;
 use ring::digest::Context;
 use serde::{Deserialize, Serialize};
+use std::error::Error as ErrorTrait;
 use std::sync::Arc;
+use tracing::error;
 use tracing::warn;
 
 const VERSION_HEADER: &str = "x-amz-version-id";
@@ -660,8 +662,11 @@ impl S3Client {
             .await
             .map_err(|err| {
                 warn!("Create multipart failed: {:?}", err);
-                Error::CreateMultipartResponseBody { source }
-            })
+                if let Some(src) = err.source() {
+                    error!("Caused by: {}", src);
+                }
+                err
+            })?
             .into_body()
             .bytes()
             .await
